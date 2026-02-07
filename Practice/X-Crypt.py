@@ -7,21 +7,40 @@ from datetime import datetime
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 FEEDBACK_DIR = os.path.join(BASE_DIR, "feedback")
+CONFIG_PATH = os.path.join(BASE_DIR, "config.pkl")
 
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(FEEDBACK_DIR, exist_ok=True)
 
-# ================= CONFIG =================
-ADMIN_PASSWORD = "xcryptadmin"
+# ================= DEFAULT CONFIG =================
+DEFAULT_CONFIG = {
+    "APP_TITLE": "🔐 XCRYPT",
+    "ADMIN_PASSWORD": "xcryptadmin",
+    "ADMIN_ENABLED": True,
+    "MASTER_PASSWORD": "xcryptmaster"   # 🔥 super admin
+}
 
-st.set_page_config(page_title="XCRYPT", layout="centered")
-st.title("🔐 XCRYPT")
+# ================= LOAD / INIT CONFIG =================
+if not os.path.exists(CONFIG_PATH):
+    with open(CONFIG_PATH, "wb") as f:
+        pickle.dump(DEFAULT_CONFIG, f)
+
+with open(CONFIG_PATH, "rb") as f:
+    CONFIG = pickle.load(f)
+
+# ================= PAGE CONFIG =================
+st.set_page_config(page_title=CONFIG["APP_TITLE"], layout="centered")
+st.title(CONFIG["APP_TITLE"])
 
 # ================= MODE SELECTION =================
-mode = st.radio(
-    "Select Mode",
-    ["Encrypt", "Decrypt", "Submit Feedback", "Admin: View Feedback"]
-)
+modes = ["Encrypt", "Decrypt", "Submit Feedback"]
+
+if CONFIG["ADMIN_ENABLED"]:
+    modes.append("Admin: View Feedback")
+
+modes.append("Master Admin")
+
+mode = st.radio("Select Mode", modes)
 
 # ================= ENCRYPT =================
 if mode == "Encrypt":
@@ -51,21 +70,18 @@ if mode == "Encrypt":
             with open(path, "wb") as f:
                 pickle.dump(data, f)
 
-            st.success("Data encrypted and saved successfully!")
+            st.success("Data encrypted and saved!")
 
 # ================= DECRYPT =================
 elif mode == "Decrypt":
     st.subheader("Decrypt Data")
-
-    filename = st.text_input("Enter filename to decrypt")
+    filename = st.text_input("Enter filename")
 
     if st.button("Decrypt"):
         path = os.path.join(DATA_DIR, filename + ".dat")
         if os.path.exists(path):
             with open(path, "rb") as f:
                 data = pickle.load(f)
-
-            st.write("### Decrypted Data")
             for k, v in data.items():
                 st.write(f"**{k}:** {v}")
         else:
@@ -73,7 +89,7 @@ elif mode == "Decrypt":
 
 # ================= FEEDBACK =================
 elif mode == "Submit Feedback":
-    st.subheader("💬 Submit Feedback")
+    st.subheader("💬 Feedback")
 
     fb_name = st.text_input("Your Name")
     feedback = st.text_area("Your Feedback")
@@ -81,30 +97,25 @@ elif mode == "Submit Feedback":
     if st.button("Submit Feedback"):
         if fb_name and feedback:
             fb_path = os.path.join(FEEDBACK_DIR, fb_name + ".dat")
-
             fb_data = {
                 "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "feedback": feedback
             }
-
             with open(fb_path, "ab") as f:
                 pickle.dump(fb_data, f)
 
-            st.success("Thank you for your feedback ❤️")
+            st.success("Feedback saved ❤️")
 
 # ================= ADMIN VIEW =================
 elif mode == "Admin: View Feedback":
     st.subheader("🔐 Admin Login")
+    pwd = st.text_input("Admin Password", type="password")
 
-    admin_pass = st.text_input("Enter Admin Password", type="password")
-
-    if admin_pass == ADMIN_PASSWORD:
+    if pwd == CONFIG["ADMIN_PASSWORD"]:
         st.success("Access Granted")
-
         entries = []
 
-        files = os.listdir(FEEDBACK_DIR)
-        for file in files:
+        for file in os.listdir(FEEDBACK_DIR):
             if not file.endswith(".dat"):
                 continue
 
@@ -114,26 +125,42 @@ elif mode == "Admin: View Feedback":
             with open(path, "rb") as f:
                 while True:
                     try:
-                        data = pickle.load(f)
-
-                        # 🔥 SAFE HANDLING (OLD + NEW DATA)
-                        time_ = data.get("time", "N/A")
-                        feedback_text = data.get("feedback", str(data))
-
-                        entries.append((name, time_, feedback_text))
-
+                        d = pickle.load(f)
+                        time_ = d.get("time", "N/A")
+                        text = d.get("feedback", str(d))
+                        entries.append((name, time_, text))
                     except EOFError:
                         break
 
-        if entries:
-            st.subheader("📒 Feedback Log")
+        for n, t, fb in entries:
+            st.markdown(f"**{n}**  \n🕒 {t}  \n💬 {fb}")
             st.markdown("---")
 
-            for name, time_, feedback in entries:
-                st.markdown(f"**{name}**  \n🕒 {time_}  \n💬 {feedback}")
-                st.markdown("---")
-        else:
-            st.info("No feedback available yet")
+    elif pwd:
+        st.error("Wrong password")
 
-    elif admin_pass:
-        st.error("Incorrect password")
+# ================= MASTER ADMIN =================
+elif mode == "Master Admin":
+    st.subheader("🧠 Master Control Panel")
+
+    mpwd = st.text_input("Master Password", type="password")
+
+    if mpwd == CONFIG["MASTER_PASSWORD"]:
+        st.success("Master Access Granted")
+
+        new_title = st.text_input("App Title", CONFIG["APP_TITLE"])
+        new_admin_pwd = st.text_input("Admin Password", CONFIG["ADMIN_PASSWORD"])
+        admin_toggle = st.checkbox("Enable Admin Mode", CONFIG["ADMIN_ENABLED"])
+
+        if st.button("Save Settings"):
+            CONFIG["APP_TITLE"] = new_title
+            CONFIG["ADMIN_PASSWORD"] = new_admin_pwd
+            CONFIG["ADMIN_ENABLED"] = admin_toggle
+
+            with open(CONFIG_PATH, "wb") as f:
+                pickle.dump(CONFIG, f)
+
+            st.success("Settings saved! Refresh app 🔄")
+
+    elif mpwd:
+        st.error("Wrong master password")

@@ -17,7 +17,7 @@ DEFAULT_CONFIG = {
     "APP_TITLE": "🔐 XCRYPT",
     "ADMIN_PASSWORD": "xcryptadmin",
     "ADMIN_ENABLED": True,
-    "MASTER_PASSWORD": "xcryptmaster"   # 🔥 super admin
+    "MASTER_PASSWORD": "Master@XCRYPT"   # 🔥 super admin
 }
 
 # ================= LOAD / INIT CONFIG =================
@@ -176,4 +176,5 @@ elif mode == "Master Admin":
 
     elif mpwd:
         st.error("Wrong master password")
+
 

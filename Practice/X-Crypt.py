@@ -25,8 +25,20 @@ if not os.path.exists(CONFIG_PATH):
     with open(CONFIG_PATH, "wb") as f:
         pickle.dump(DEFAULT_CONFIG, f)
 
-with open(CONFIG_PATH, "rb") as f:
-    CONFIG = pickle.load(f)
+try:
+    with open(CONFIG_PATH, "rb") as f:
+        CONFIG = pickle.load(f)
+except Exception:
+    # fallback if config is corrupted or unreadable
+    CONFIG = {
+        "APP_TITLE": "🔐 XCRYPT",
+        "ADMIN_PASSWORD": "xcryptadmin",
+        "ADMIN_ENABLED": True,
+        "MASTER_PASSWORD": "xcryptmaster"
+    }
+    with open(CONFIG_PATH, "wb") as f:
+        pickle.dump(CONFIG, f)
+
 
 # ================= PAGE CONFIG =================
 st.set_page_config(page_title=CONFIG["APP_TITLE"], layout="centered")
@@ -164,3 +176,4 @@ elif mode == "Master Admin":
 
     elif mpwd:
         st.error("Wrong master password")
+

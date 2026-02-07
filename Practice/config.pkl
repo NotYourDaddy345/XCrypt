@@ -1,0 +1,5 @@
+{
+  "APP_TITLE": "🔐 XCRYPT",
+  "ADMIN_PASSWORD": "xcryptadmin",
+  "ADMIN_ENABLED": True
+}

@@ -12,7 +12,7 @@ os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(FEEDBACK_DIR, exist_ok=True)
 
 # ================= CONFIG =================
-ADMIN_PASSWORD = "xcryptadmin"   # 🔐 change if you want
+ADMIN_PASSWORD = "xcryptadmin"
 
 st.set_page_config(page_title="XCRYPT", layout="centered")
 st.title("🔐 XCRYPT")
@@ -81,10 +81,12 @@ elif mode == "Submit Feedback":
     if st.button("Submit Feedback"):
         if fb_name and feedback:
             fb_path = os.path.join(FEEDBACK_DIR, fb_name + ".dat")
+
             fb_data = {
                 "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "feedback": feedback
             }
+
             with open(fb_path, "ab") as f:
                 pickle.dump(fb_data, f)
 
@@ -113,7 +115,13 @@ elif mode == "Admin: View Feedback":
                 while True:
                     try:
                         data = pickle.load(f)
-                        entries.append((name, data["time"], data["feedback"]))
+
+                        # 🔥 SAFE HANDLING (OLD + NEW DATA)
+                        time_ = data.get("time", "N/A")
+                        feedback_text = data.get("feedback", str(data))
+
+                        entries.append((name, time_, feedback_text))
+
                     except EOFError:
                         break
 

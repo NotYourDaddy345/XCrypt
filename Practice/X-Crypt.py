@@ -15,7 +15,7 @@ os.makedirs(FEEDBACK_DIR, exist_ok=True)
 # ================= DEFAULT CONFIG =================
 DEFAULT_CONFIG = {
     "APP_TITLE": "🔐 XCRYPT",
-    "ADMIN_PASSWORD": "xcryptadmin",
+    "ADMIN_PASSWORD": "Xcrypt@ADMIN",
     "ADMIN_ENABLED": True,
     "MASTER_PASSWORD": "Master@XCRYPT"   # 🔥 super admin
 }
@@ -176,5 +176,6 @@ elif mode == "Master Admin":
 
     elif mpwd:
         st.error("Wrong master password")
+
 
 

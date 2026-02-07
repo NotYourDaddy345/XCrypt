@@ -1,109 +1,85 @@
-import pickle as pk
-import time
-import winsound
-import pygame
+import streamlit as st
+import pickle
 import os
+from datetime import datetime
 
-# ================= PATH SETUP =================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 FEEDBACK_DIR = os.path.join(BASE_DIR, "feedback")
+
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(FEEDBACK_DIR, exist_ok=True)
 
-MUSIC_PATH = os.path.join(BASE_DIR, "music", "welcome.wav")
+st.set_page_config(page_title="XCRYPT", layout="centered")
 
-# ================= MUSIC =================
-pygame.mixer.init()
-pygame.mixer.music.load(MUSIC_PATH)
-pygame.mixer.music.play(fade_ms=2000)
+st.title("🔐 XCRYPT")
+st.write("Secure Data Demo + Feedback System")
 
-# ================= WELCOME =================
-print("WELCOME SIR!")
-winsound.Beep(700, 200)
-time.sleep(0.5)
-winsound.Beep(500, 200)
-time.sleep(0.5)
-
-print("Let me introduce you to")
-winsound.Beep(900, 150)
-time.sleep(1)
-
-print("=" * 44)
-print(" " * 15, "ＸＣＲＹＰＴ")
-print("=" * 44)
-
-winsound.Beep(500, 400)
-winsound.Beep(500, 400)
-
-# ================= MAIN CHOICE =================
-Choice = input("E for Encrypting, D for Decrypting: ")
+choice = st.radio("Choose an option", ["Encrypt", "Decrypt"])
 
 # ================= ENCRYPT =================
-if Choice.lower() == "e":
-    NameInput = input("What is your name: ")
-    PhoneNumber = input("What is your Phone Number: ")
-    EmailID = input("What is your Email-ID: ")
-    PasswordInput = input("What is your Email-ID Password: ")
-    AadharNumber = input("What is your Aadhar Number: ")
-    StateInput = input("In which State do you live: ")
-    CityInput = input("Where do you live (city): ")
+if choice == "Encrypt":
+    st.subheader("Encrypt Data")
 
+    name = st.text_input("Your Name")
+    phone = st.text_input("Phone Number")
+    email = st.text_input("Email ID")
+    password = st.text_input("Email Password", type="password")
+    aadhar = st.text_input("Aadhar Number")
+    city = st.text_input("City")
+    state = st.text_input("State")
+    filename = st.text_input("File name to save")
 
-    FileName = input("What should I name your File: ")
-
-    def Encrypting():
-        file_path = os.path.join(DATA_DIR, FileName + ".dat")
-        with open(file_path, 'wb') as file:
-            DataDictionary = {
-                'Name': NameInput,
-                'Email-ID': EmailID,
-                'Password': PasswordInput,
-                'PhoneNumber': PhoneNumber,
-                'AadharNumber': AadharNumber,
-                'State': StateInput,
-                'City': CityInput
+    if st.button("Encrypt & Save"):
+        if filename:
+            path = os.path.join(DATA_DIR, filename + ".dat")
+            data = {
+                "Name": name,
+                "Phone": phone,
+                "Email": email,
+                "Password": password,
+                "Aadhar": aadhar,
+                "City": city,
+                "State": state
             }
-            pk.dump(DataDictionary, file)
+            with open(path, "wb") as f:
+                pickle.dump(data, f)
 
-    Encrypting()
+            st.success("Data encrypted and saved!")
 
 # ================= DECRYPT =================
-elif Choice.lower() == "d":
-    NameInput = input("What is your Good Name Sir/Mam: ")
-    def decrypting():
-        filename = input("What is your filename: ")
-        file_path = os.path.join(DATA_DIR, filename + ".dat")
+if choice == "Decrypt":
+    st.subheader("Decrypt Data")
 
-        with open(file_path, 'rb') as file:
-            readfile = pk.load(file)
+    filename = st.text_input("Enter filename to decrypt")
 
-        print("=" * 40)
-        for key, value in readfile.items():
-            print(f"{key}: {value}")
-        print("=" * 40)
+    if st.button("Decrypt"):
+        path = os.path.join(DATA_DIR, filename + ".dat")
+        if os.path.exists(path):
+            with open(path, "rb") as f:
+                data = pickle.load(f)
 
-    decrypting()
+            st.write("### Decrypted Data")
+            for k, v in data.items():
+                st.write(f"**{k}:** {v}")
+        else:
+            st.error("File not found")
 
-else:
-    print("Invalid choice 🤦‍♂️")
+# ================= FEEDBACK =================
+st.divider()
+st.subheader("💬 Feedback")
 
-# ================== FEEDBACK ===================
-time.sleep(2)
-print("I hope that this program worked well for you....")
-time.sleep(0.5)
-print("If you really enjoyed this program please give a feedback:")
-print()
-Feedback_Data = input(": ")
-Feedback_Dictionary = {NameInput : Feedback_Data}
-Feedback_Path = os.path.join(FEEDBACK_DIR, NameInput + ".dat")
-Feedback_File = open(Feedback_Path, "ab")
-pk.dump(Feedback_Dictionary, Feedback_File)
-Feedback_File.close()
+fb_name = st.text_input("Your Name (for feedback)")
+feedback = st.text_area("Your Feedback")
 
-# ================= EXIT + FADE =================
-pygame.mixer.music.fadeout(2000)
-time.sleep(2)
-input("Press Enter to Exit...")
+if st.button("Submit Feedback"):
+    if fb_name and feedback:
+        fb_path = os.path.join(FEEDBACK_DIR, fb_name + ".dat")
+        fb_data = {
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "feedback": feedback
+        }
+        with open(fb_path, "ab") as f:
+            pickle.dump(fb_data, f)
 
-os.system('cls' if os.name == 'nt' else 'clear')
+        st.success("Thank you for your feedback! ❤️")
